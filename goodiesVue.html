@@ -1,0 +1,3338 @@
+<script src="js/vue.js"></script>
+<!-- подключаем vue -->
+
+<input type="text" v-model="firstName">
+<!--v-model тоже самое, что и v-on и v-bind вместе-->
+<!--@input тоже самое, что и v-on:input(@ = v-on); :value тоже самое, что и v-bind:value-->
+<input type="text" @input="name = $event.target.value" :value="name">
+
+<h2>Hello, {{ fullName }}</h2>
+<!--обращаемся к computed свойству fullName-->
+<button class="btn btn-success" @click="showText = !showText">ToggleText</button>
+<!-- @click - событие клика -->
+
+<h2 v-show="showName">Hello, {{ name }}</h2>
+<!-- v-show - элемент отображается если showName == true (элемент присутствует в DOM) -->
+<h2 v-if="showName">Hello, {{ name }}</h2>
+<h2 v-else>Hello, Jban</h2>
+<!-- v-if - элемент отображается если showName == true (элемент отсутствует в DOM), (v-else-if, v-else)-->
+
+<ul>
+  <li v-for="(number, index) in numbers" v-on:mouseenter="$event.target.style.color='red'" v-on:mouseleave="$event.target.style.color='black'">{{index}} - {{ number }}</li>
+</ul>
+
+<table class="table table-bordered">
+  <tr v-for="(value, key, i) in info">
+    <td>{{ i }}</td>
+    <td>{{ key }}</td>
+    <td>{{ value }}</td>
+  </tr>
+</table>
+<!-- v-for - цикл, создает столько элементов li, сколько элементов в массиве numbers(объекте info) -->
+
+<script>
+  function getSale(code, callback) {
+    let codes = {
+      newYear: 10,
+      some: 20
+    }
+
+    let sale = (codes[code] !== undefined) ? codes[code] : 0;
+
+    setTimeout(() => {
+      callback(sale);
+    }, 500);
+
+  }
+
+  let sample = new Vue({
+    el: '.sample', //выборка идет по первому элементу, а не все как в jQuery
+    data: { //обычные данные
+      firstName: '',
+      lastName: '',
+      showText: false,
+      promo: '',
+      numbers: [],
+      info: {
+        name: 'Jban',
+        mail: 'jban@mail.ru'
+      }
+    },
+    methods: { //методы(обновляется всегда, когда идет перерисовка каких то элементов) ставятся на события
+      toggleName() {
+        this.showName = !this.showName;
+      }
+    },
+    computed: { //вычисляемые свойства(обновляется только если изменились поля, которые в нем используются)
+      fullName() {
+        return this.firstName + ' ' + this.lastName;
+      },
+      addNumber() {
+        this.numbers.push(Math.floor(Math.random() * 10)); //добавляем случайное число
+        this.sortNumber();
+      },
+      sortNumber() { //сортируем числа по порядку
+        this.numbers.sort((a, b) => {
+          return a > b ? 1 : -1;
+        });
+      }
+    },
+    watch: { //слежение за определенным свойством, при его изменении делаем какие-то действия, хорошо подходит для асинхронных запросов
+      promo() { //следим за изменением поля promo
+        getSale(this.promo, (sale) => {
+          this.sale = sale;
+        });
+      }
+    }
+  });
+</script>
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- классы, модификаторы, стили -->
+<label class="form-check-label">
+  <!-- у элементов форм работает двунаправленная связь, и vue сам понимает на какой элемент мы кликнули -->
+  <input type="radio" class="form-check-input" value="info" v-model="divClass"> Info
+</label>
+
+<div class="form-check" v-for="(value, name) in flags">
+  <label class="form-check-label">
+    <input type="checkbox" class="form-check-input" v-model="flags[name]"> {{ name }}
+  </label>
+</div>
+
+<table class="table" :class="flags">
+  <!-- переключает классы, определенные в flags {} -->
+  <tr>
+    <td>Title</td>
+    <td>Some</td>
+    <td>nz</td>
+  </tr>
+</table>
+
+<div class="form-group">
+  <label>Phone</label>
+  <!-- <input type="text" class="form-control" v-model.lazy="phone"> -->
+  <!-- .lazy меняет собития в v-model на onchange(без модификатора собитие oninput) -->
+  <input type="text" class="form-control" v-model.trim="phone" @keyup.enter="phoneShow = true">
+  <!-- .trim вырезает пробелы вначале и вконце (можно использовать несколько модификаторов .lazy.trim), @keyup.enter(модификатор на собития нажатия клавиши enter) -->
+</div>
+
+<div class="form-group" v-for="(guest, key, index) in guests" :key="key">
+  <!-- так как guests в этом примере объект{}, используем key (объекты не реактивны на добавление новых свойств, в отличии от массивов)-->
+  <label @dblclick="delGuest(key)">Guest {{ index + 1}}</label>
+  <!-- @dblclick - событие двойного клика-->
+  <input type="text" class="form-control" v-model="guests[key]">
+</div>
+
+<div class="alert" :style="[properties, minHeight]">
+  <!-- применяем стили заданные в объекте properties -->
+  some text
+</div>
+<button class="btn btn-primary" @click="height += 10">+ height</button>
+<!-- изменяем свойство height -->
+
+<script>
+  /* 
+                                      директива :class и :style принимает след. параметры
+                                      :class="string"
+                                      :class="array"
+                                      :class="obj"
+                                      :class="[str, obj]"
+                                      :class="['alert', 'some', {a: true, b:false}]"
+                                       */
+
+  let sample = new Vue({
+    el: '.sample', //выборка идет по первому элементу, а не все как в jQuery
+    data: { //обычные данные
+      divClass: 'info',
+      flags: {
+        'table-bordered': false,
+        'table-hover': false,
+        'table-some': false
+      },
+      guests: {},
+      guestIterator: 0,
+      properties: { //объект со значениями css свойств
+        color: 'white',
+        backgroundColor: 'black'
+      },
+      height: 0
+    },
+    methods: { //методы
+      addGuest() {
+        this.guestIterator++;
+        // this.guests[this.guestIterator] = '';
+        this.$set(this.guests, this.guestIterator, ''); //добавление реактивности полей для объекта
+      },
+      delGuest(index) {
+        this.$delete(this.guests, index); //удаление реактивности и из объекта
+      }
+    },
+    computed: { //вычисляемые свойства
+      divClassName() {
+        return [
+          'alert-' + this.divClass,
+          'my-' + this.divClass
+        ];
+      },
+      minHeight() {
+        return {
+          minHeight: this.height + 'px'
+        }
+      }
+    }
+  });
+</script>
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- своя директива, компоненты -->
+<h2>{{ clicks }}</h2>
+<button class="btn btn-success" v-ondelay:click.prevent.1000="onClick">
+  <!-- вызываем директиву(click попадает в options.arg; prevent и 1000 в options.modifiers) -->
+  Send Data
+</button>
+
+<!-- @plusplus ловит событие, прокинутое через $emit -->
+<my-component v-for="(elem, index) in values" :key="index" :min="elem.min" :max="elem.max" @plusplus="onPlusPlus(index)">
+
+</my-component>
+
+<script>
+  //регистрируем директиву
+  Vue.directive('ondelay', {
+    bind(el, options) { //хук директивы
+      let timer;
+      let timeout = 0;
+
+      for (let name in options.modifiers) {
+        if (!isNaN(+name)) {
+          timeout = parseInt(name);
+        }
+      }
+
+      let callback = (e) => {
+        if (timer !== undefined) {
+          clearInterval(timer);
+        }
+        if (options.modifiers.prevent) {
+          e.preventDefault();
+        }
+        timer = setTimeout(() => {
+          options.value.call(this, e);
+        }, timeout);
+      };
+      el.addEventListener(options.arg, callback);
+    }
+  });
+
+  /* template это шаблон компонента */
+  Vue.component('my-component', {
+    props: ['min', 'max'], //регистрация атрибутов
+    template: `
+        <div>
+          <h2>{{ number }}</h2>
+          <button class="btn btn-primary" @click="onClick">+</button>
+          <hr>
+        </div>
+      `,
+    data() { //используется метод data() вместо объекта data{}, чтобы для каждого компонента возвращался новый объект
+      return {
+        // number: Math.floor(Math.random() * (this.max - this.min)) + this.min
+      }
+    },
+    methods: { //как и у обычного экземпляра Vue, также есть все хуки(beforeCeated, created, beforeMounted...)
+      onClick(e) {
+        this.$emit('plusplus'); //$emit прокидывает собитие родителю
+      }
+    },
+    computed: {
+      number() {
+        return Math.floor(Math.random() * (this.max - this.min)) + this.min;
+      }
+    }
+  });
+
+  new Vue({
+    el: '.sample',
+    data: {
+      clicks: 0,
+      values: [{
+          min: 1,
+          max: 5
+        },
+        {
+          min: 5,
+          max: 10
+        },
+        {
+          min: 10,
+          max: 15
+        }
+      ]
+    },
+
+    methods: {
+      onClick() {
+        this.clicks++;
+      },
+      onPlusPlus(index) {
+        this.values[index].min += 5;
+        this.values[index].max += 5;
+      }
+    },
+    computed: {
+
+    }
+  });
+</script>
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- props, components, keep_alive -->
+<app-some :a="12">
+  <!-- ожидается a >=1 && a <= 10, валидация не пройдена -->
+
+</app-some>
+
+<script>
+  Vue.component('appSome', {
+    //валидация атрибутов(a: Number - ожидается числовое значение)
+    props: {
+      // a: Number
+      // a: null //ожидается любое значение
+      // a: [Number, String]
+      /* a: {
+        type: Number,
+        required: true //обязательное
+      } */
+      /* a: {
+        type: Number,
+        default: 100 //значение по умолчанию, если не передано
+      } */
+      /* a: {
+        type: Object,
+        default() {
+          return {
+            a: 1
+          }
+        }
+      } */
+      a: {
+        validator(val) {
+          return val >= 1 && val <= 10;
+        }
+      }
+    },
+    template: `
+  <div>
+    {{this.a}}
+  </div>
+  `
+  });
+</script>
+<!-- ************************************************************************************** -->
+<div class="sample">
+  <button class="btn btn-primary" @click="ul = !ul">toggle</button>
+
+  <!-- переключение компонентов(либо с if - else, либо через тег компонент и computed свойство(только однотипные компоненты)) -->
+  <app-ul :items="list" v-if="ul"></app-ul>
+  <app-ol :items="list" v-else :start="5"></app-ol>
+
+  <component :is="listType" :items="list"></component>
+</div>
+
+<!-- переключение компонентов(либо с if - else, либо через тег компонент и computed свойство(только однотипные компоненты)) -->
+<!-- keep-alive предотвращает создание новых экземпляров Vue при каждом переключении -->
+<keep-alive>
+  <app-ul :items="list" v-if="ul"></app-ul>
+  <app-ol :items="list" v-else :start="5"></app-ol>
+</keep-alive>
+
+<keep-alive>
+  <component :is="listType" :items="list"></component>
+</keep-alive>
+
+<script>
+  //компонент 1
+  Vue.component('appUl', {
+    props: {
+      items: null
+    },
+    template: `
+    <ul>
+      <li v-for="item in items">
+        {{item}}
+      </li>
+    </ul>
+    `,
+    created() {
+      console.log('created ul');
+    },
+    activated() {
+      console.log('activated ul');
+    }
+  });
+  //компонент 2  
+  Vue.component('appOl', {
+    props: {
+      items: null,
+      start: Number
+    },
+    template: `
+    <ol :start="start">
+      <li v-for="item in items">
+        {{item}}
+      </li>
+    </ol>
+    `,
+    created() {
+      console.log('created ol');
+    },
+    activated() {
+      console.log('activated ol');
+    }
+  });
+  //объект Vue*************************************
+  new Vue({
+    el: '.sample',
+    data: {
+      list: ['some', 'items', 'for', 'list'],
+      ul: true
+    },
+    computed: {
+      listType() {
+        return this.ul ? 'appUl' : 'appOl';
+      }
+    }
+  });
+</script>
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- webpack components -->
+<script>
+  //в файл main.js
+  import Vue from 'vue'
+  // import App from './App.vue'
+  import App from './App2.vue'
+
+  new Vue({
+    el: '#app',
+    render: h => h(App)
+  });
+</script>
+<!-- в файл Input.vue*********************************************************** -->
+<template>
+  <div class="form-group">
+    <label>{{name}}</label>
+    <i class="fa" v-if="activated" :class="validClass"></i>
+    <input type="text" class="form-control" :value="value" @input="onInput">
+  </div>
+</template>
+
+<script>
+  export default {
+    props: ['name', 'value', 'pattern'], //атрибуты
+    data() {
+      return {
+        activated: this.value != ''
+      }
+    },
+    mounted() {
+      this.$emit('changestatus', this.isValid); //прокидываем событие родителю в хуке, чтобы прогресбар пересчитался(для значений поля value, установленного по-умолчанию )
+    },
+    computed: {
+      isValid() {
+        return this.pattern.test(this.value);
+      },
+      //проверяем введеное значение на соответствие паттерну(в завис. от этого подставляем класс)
+      validClass() {
+        return this.isValid ? 'fa-check-circle text-success' : 'fa-exclamation-circle text-danger';
+      },
+    },
+    methods: {
+      onInput(e) {
+        //активируем флаг, что данные были введены в поле
+        this.activated = true;
+
+        //пробрасываем событие родителю и объект с параметрами($event)
+        /* this.$emit('changedata', { 
+          value: e.target.value,
+          valid: this.pattern.test(e.target.value)
+        }); */
+        this.$emit('update:value', e.target.value); //если применяем модификатор .sync в родителе - пробрасываем событие update:value, так как .sync подставлен к value в родителе
+      }
+    },
+    watch: {
+      isValid() { //вешаем watcher на свойство isValid, когда значение его меняется, то пробрасываем событие changedata родителю
+        this.$emit('changestatus', this.isValid);
+      }
+    }
+  }
+</script>
+<!-- в файл Radio.vue*********************************************************** -->
+<template>
+  <div>
+    <h3>{{info[current].title}}</h3>
+    <hr>
+    <div class="form-check" v-for="(item, i) in info[current].answers" :key="i">
+      <label class="form-check-label">
+        <input :type="info[current].type" class="form-check-input" :value="item" v-model="info[current].selected"> {{ info[current].answers[i] }}
+      </label>
+    </div>
+  </div>
+  <!-- @input="onInput(i, $event.target.value)" -->
+</template>
+
+<script>
+  export default {
+    props: ["current", "check"], //атрибуты
+    data() {
+      return {
+        // checked: false,
+        info: [{
+            type: "radio",
+            title: "Какой тег задаёт ссылку?",
+            answers: ["a", "div", "span", "img"],
+            selected: ''
+          },
+          {
+            type: "checkbox",
+            title: "Какие из  этих тегов строчные?",
+            answers: ["a", "div", "span", "img"],
+            selected: []
+          }
+        ]
+      };
+    },
+    mounted() {
+
+    },
+    computed: {
+      checked() {
+        // return this.info[this.current].btnDisabled;
+      },
+      selected() {
+        return this.info[this.current].selected;
+      },
+      currentQuestion() {
+        return this.current;
+      }
+    },
+    methods: {
+      onInput(index, value) {
+        /* console.log(value);
+          
+        this.info[this.current].checked = value;
+        console.log(this.info[this.current].checked);
+          
+        this.info[this.current].btnDisabled = false; */
+      }
+    },
+    watch: {
+      checked() {
+        //вешаем watcher на свойство checked, когда значение его меняется, то пробрасываем событие changedata родителю
+        // this.$emit("changebtnstatus", this.info[this.current].btnDisabled);
+      },
+      selected() {
+        if (this.selected.length > 0) {
+
+          console.log(this.selected);
+          this.$emit("changebtnstatus", false);
+        } else {
+          console.log(this.selected);
+          this.$emit("changebtnstatus", true);
+        }
+      },
+      currentQuestion() {
+        this.$emit("theend", this.info);
+      }
+    }
+  };
+</script>
+<!-- в файл App.vue*********************************************************** -->
+<template>
+  <div class="wrapper">
+    <div class="sample">
+      <form v-if="firstScreen" @submit.prevent="firstScreen = !firstScreen">
+        <div class="progress">
+          <div class="progress-bar" :style="width"></div>
+        </div>
+        <div>
+
+          <!-- компонент appInput(в html называем через дефис), :name, :value - атрибуты опеределенные в массиве props; модификатор .sync позволяет избавиться от события @changedata="onChangeData(i, $event)" -->
+          <app-input v-for="(obj, i) in info" :name="obj.name" :value.sync="obj.value" :pattern="obj.pattern" :key="i" @changestatus="onChangeData(i, $event)">
+
+          </app-input>
+          <!-- *************************** -->
+
+        </div>
+        <button class="btn btn-primary" :disabled="btnDisabled">
+          Send Data
+        </button>
+      </form>
+      <div v-else>
+        <table class="table table-bordered">
+          <tr v-for="(obj, i) in info" :key="i">
+            <td>{{obj.name}}</td>
+            <td>{{obj.value}}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  /* npm i vue-cli -g (устанавливаем vue глобально) 
+                        vue init webpack-simple (скачиваем сборку)
+                        npm i (устанавливаем пакеты)
+                        npm run dev (запускает сервер с приложением)
+                        npm run build (собирает проект)  
+                      */
+  import AppInput from "./components/Input"; //импортируем компонент Input.vue
+
+  export default { //все что было в new Vue({...} или Vue.component({}), кроме el: '.simple')
+    data() { //data метод возвращающий объект
+      return {
+        firstScreen: true,
+        info: [{
+            name: "Name",
+            value: "Yo",
+            pattern: /^[a-zA-Z ]{2,30}$/
+          },
+          {
+            name: "Phone",
+            value: "",
+            pattern: /^[0-9]{7,14}$/
+          },
+          {
+            name: "Email",
+            value: "",
+            pattern: /.+/
+          },
+          {
+            name: "Some Field 1",
+            value: "",
+            pattern: /.+/
+          },
+          {
+            name: "Some Field 2",
+            value: "",
+            pattern: /.+/
+          }
+        ],
+        controls: [], //массив флагов, пройдена валидация или нет
+        done: 0
+      }
+    },
+    beforeMount() {
+      //хук
+      for (let i = 0; i < this.info.length; i++) {
+        this.controls.push(false);
+      }
+    },
+
+    methods: {
+      /* onChangeData(index, data) {
+          this.info[index].value = data.value;
+          this.controls[index] = data.valid;
+    
+          let done = 0;
+    
+          for (let i = 0; i < this.controls.length; i++) {
+            if (this.controls[i]) {
+              done++;
+            }
+          }
+    
+          this.done = done;
+        } */
+      onChangeData(index, status) {
+        this.controls[index] = status;
+
+        let done = 0;
+
+        for (let i = 0; i < this.controls.length; i++) { //пересчитывается только если status поменялся
+          if (this.controls[i]) {
+            done++;
+          }
+        }
+
+        this.done = done;
+      }
+    },
+    computed: {
+      width() {
+        let w = this.done / this.info.length * 100;
+
+        return {
+          width: w + "%"
+        };
+      },
+      btnDisabled() {
+        return this.done < this.info.length;
+      }
+    },
+
+    components: {
+      //локальная регистрация компонентов
+      AppInput
+    }
+  };
+</script>
+
+<style scoped>
+  /* scoped - стили действуют только на элементы определенные в данном компоненте */
+
+  .wrapper {
+    max-width: 600px;
+    margin: 20px auto;
+  }
+</style>
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- array reactive, obj reactive, obj in arr reactive -->
+<input type="text" class="form-control" @input="onInput(index, $event)">
+<input type="text" class="form-control" @input="onInput2(index, $event)">
+<input type="text" class="form-control" @input="onInput3(index, $event)">
+<script>
+  /* поля объектов реактивны, если на них поставлены get и set, если мы на лету добавляем новое поле объекту, оно не будет реактивно по-умолчанию;
+                    у массивов реактивны методы push, splice, shift, pop..., но не реактивно обращение к элементу массива через индекс(items[i]) */
+  let sample = new Vue({
+    el: '.sample', //выборка идет по первому элементу, а не все как в jQuery
+    data: { //обычные данные
+      guests: [],
+      guests2: {}, //obj
+      i: 0
+    },
+    methods: { //методы
+      addGuest() {
+        this.guests.push('');
+      },
+      delGuest(index) {
+        this.guests.splice(index, 1)
+      },
+      onInput(index, e) {
+        // this.guests[index] = e.target.value; //присваивание значения элементу массива(реактивности нет)
+        this.$set(this.guests, index, e.target.value); //с помощью метода $set реактивность есть(так работает v-model)
+      },
+      addGuest2() {
+        this.i++;
+        this.$set(this.guests, this.i, ''); //добавляем и делаем реактивным
+      },
+      delGuest2(index) {
+        this.$delete(this.guests, index); //удаляем реактивность
+      },
+      onInput2(index, e) {
+        // this.guests[index] = e.target.value; //присваивание значения элементу массива(реактивности нет)
+        this.$set(this.guests, index, e.target.value); //с помощью метода $set реактивность есть(так работает v-model) 
+      },
+      addGuest3() {
+        this.guests.push({ //добавляем объект в массив 
+          name: ''
+        });
+      },
+      delGuest3(index) {
+        this.guests.splice(index, 1)
+      },
+      onInput3(index, e) {
+        this.guests[index].name = e.target.value; //присваивание значения элементу массива(реактивности нет), если элемент массива не obj
+        // this.$set(this.guests, index, e.target.value); //с помощью метода $set реактивность есть(так работает v-model)
+      }
+    }
+  });
+</script>
+<!-- mixins ************************************************** -->
+<script>
+  //mixin создается по правилам компонента, это кусок кода который можно добавить экземпляру Vue
+  let mixinUpdatesLoger = {
+    data: {
+      updates: 0
+    },
+    updated() { //хук 
+      this.updates++;
+      console.log(this.updates);
+
+    }
+  }
+
+  let sample = new Vue({
+    el: '.sample', //выборка идет по первому элементу, а не все как в jQuery
+    data: { //обычные данные
+      show: true
+    },
+    mixins: [mixinUpdatesLoger] //добавляем миксин
+  });
+
+  let sample2 = new Vue({
+    el: '.sample2', //выборка идет по первому элементу, а не все как в jQuery
+    data: { //обычные данные
+      show: true
+    },
+    mixins: [mixinUpdatesLoger]
+  });
+</script>
+<!-- filters****************************************************** -->
+<div class="alert alert-warning" v-show="show">
+  {{ text }}
+  <hr> {{ text | length }}
+  <hr>
+  <!-- выводим фильтр -->
+  {{ text | reverse | upper }}
+  <hr> {{ textLength }}
+  <hr>
+</div>
+
+<script>
+  //фильтры, как и методы вызываются всегда, даже если свойства на которые они завязаны не обновились
+  let sample = new Vue({
+    el: '.sample', //выборка идет по первому элементу, а не все как в jQuery
+    data: { //обычные данные
+      show: true,
+      text: 'some text'
+    },
+    computed: {
+      textLength() {
+        return this.text.length;
+      }
+    },
+    filters: {
+      length(some) { //принимает 1 параметр(само свойство, которое фильтруется; в данном случае text)
+        return some.length;
+      },
+      reverse(str) { //переворачивает строку
+        return str.split('').reverse().join('');
+      },
+      upper(str) {
+        return str.toUpperCase();
+      }
+    }
+  });
+</script>
+<!-- transition************************************************ -->
+<!-- appear - нужен если элемент изначально виден, но хочется чтобы он все равно санимировался -->
+<transition name="fade" appear>
+  <div class="alert alert-success" v-show="show">
+    <div>some text about some</div>
+    <div>some text about some</div>
+    <div>some text about some</div>
+    <div>some text about some</div>
+  </div>
+</transition>
+
+<style>
+  .fade-enter {
+    /* добавляется на долю секунды до анимации */
+    opacity: 0;
+  }
+
+  .fade-enter-active {
+    /* добавляется когда анимация начинает идти, .fade-enter удаляется*/
+    transition: opacity .5s;
+  }
+
+  .fade-enter-to {
+    /* остается на долю секунды после того, как анимация завершилась */
+  }
+
+  .fade-leave {
+    /* добавляется на долю секунды до анимации */
+    /* opacity: 0; */
+  }
+
+  .fade-leave-active {
+    /* добавляется когда анимация начинает идти, .fade-leave удаляется*/
+    transition: opacity .5s;
+  }
+
+  .fade-leave-to {
+    /* остается на долю секунды после того, как анимация завершилась */
+    opacity: 0;
+  }
+
+  /* схема работы:
+      classList.add('fade-enter') (opacity: 0)
+      classList.add('fade-enter-active') (transition)
+      getComputedStyle[transition-duration] -> .5s (duration || transition-duration || animation-duration)
+      classList.remove('fade-enter') (opacity: 1)    
+      classList.add('fade-enter-to') 
+      setTimeout(transition-duration)
+        classList.remove('fade-enter-active')
+        classList.remove('fade-enter-to')
+      
+      */
+</style>
+<!-- animation********************************************* -->
+<transition name="boom">
+  <div class="alert alert-success" v-show="show">
+    <div>some text about some</div>
+    <div>some text about some</div>
+    <div>some text about some</div>
+    <div>some text about some</div>
+  </div>
+</transition>
+
+<style>
+  .boom-enter {
+    /* добавляется на долю секунды до анимации */
+  }
+
+  .boom-enter-active {
+    /* добавляется когда анимация начинает идти, .fade-enter удаляется*/
+    animation: slideIn .5s;
+  }
+
+  .fade-enter-to {
+    /* остается на долю секунды после того, как анимация завершилась */
+  }
+
+  .boom-leave {
+    /* добавляется на долю секунды до анимации */
+  }
+
+  .boom-leave-active {
+    /* добавляется когда анимация начинает идти, .fade-leave удаляется*/
+    animation: slideOut .5s;
+  }
+
+  .boom-leave-to {
+    /* остается на долю секунды после того, как анимация завершилась */
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(-2000px)
+    }
+    to {
+      transform: translateX(0)
+    }
+  }
+
+  @keyframes slideOut {
+    from {
+      transform: translateX(0)
+    }
+    to {
+      transform: translateX(-2000px)
+    }
+  }
+</style>
+<!-- transition between two elements********************************************* -->
+<!-- transition хорошо анимирует разные элементы (div и section), если они одинаковые - проставляем атрибут key -->
+<transition name="boom">
+  <div class="alert alert-success" v-if="show" key="one"></div>
+  <div class="alert alert-danger" v-else key="two"></div>
+</transition>
+<!-- transition between two elements mode********************************************* -->
+<!-- атрибут mode устанавливает как происходят анимации(одновременно, сначала первая потом вторая, сначала вторая потом первая) -->
+<transition name="boom" mode="out-in">
+  <div class="alert alert-success" v-if="show" key="one"></div>
+  <div class="alert alert-danger" v-else key="two"></div>
+</transition>
+<!-- атрибуты enter-active-class="animated tada" leave-active-class="animated bounceOutDown" тоже самое что и классы в предыдущих примерах, только сюда можно задать классы сторонних библиотек или свои-->
+<transition enter-active-class="animated tada" leave-active-class="animated bounceOutDown" mode="out-in">
+  <div class="alert alert-success" v-if="show" key="one"></div>
+  <div class="alert alert-danger" v-else key="two"></div>
+</transition>
+<!-- transition callbacks********************************************* -->
+<!-- отлавливаем события -->
+<transition mode="out-in" enter-active-class="animated tada" leave-active-class="animated bounceOutRight" @before-enter="beforeEnter"
+  @enter="enter" @after-enter="afterEnter" @enter-cancelled="enterCancelled" @before-leave="beforeLeave" @leave="leave" @after-leave="afterLeave"
+  @leave-cancelled="leaveCancelled">
+</transition>
+<script>
+  new Vue({
+    el: '.sample',
+    data: {
+      show: true
+    },
+    methods: {
+      beforeEnter() {
+        console.log('beforeEnter');
+      },
+      enter() {
+        console.log('enter');
+      },
+      afterEnter() {
+        console.log('afterEnter');
+      },
+      enterCancelled() {
+        console.log('enterCancelled');
+      },
+      beforeLeave() {
+        console.log('beforeLeave');
+      },
+      leave() {
+        console.log('leave');
+      },
+      afterLeave() {
+        console.log('afterLeave');
+      },
+      leaveCancelled() {
+        console.log('leaveCancelled');
+      }
+    }
+  });
+</script>
+<!-- transition js******************************************* -->
+<!-- :css="false" запрещает Vue брать duration enter-active и leave-active -->
+<transition mode="out-in" :css="false" @before-enter="beforeEnter" @enter="enter" @leave="leave">
+  <div class="alert alert-success" v-if="show" key="first"></div>
+  <div class="alert alert-danger" v-else="show" key="second"></div>
+</transition>
+<script>
+  new Vue({
+    el: '.sample',
+    data: {
+      show: true
+    },
+    methods: {
+      beforeEnter(el) {
+        el.style.opacity = 0;
+      },
+      enter(el, done) {
+        let time = 500;
+        let fps = 50;
+        let fr = 1000 / fps;
+        let steps = time / fr;
+        let d = 1 / steps;
+        let step = 0;
+        let o = 0;
+
+        let timer = setInterval(() => {
+          step++;
+          o += d;
+          el.style.opacity = o;
+
+          if (step >= steps) {
+            clearInterval(timer);
+            el.style.opacity = 1;
+            done(); //колбэк сигнализирует что анимация закончилась
+          }
+        }, fr);
+      },
+      leave(el, done) {
+        let time = 500;
+        let fps = 50;
+        let fr = 1000 / fps;
+        let steps = time / fr;
+        let d = 1 / steps;
+        let step = 0;
+        let o = 1;
+
+        let timer = setInterval(() => {
+          step++;
+          o -= d;
+          el.style.opacity = o;
+
+          if (step >= steps) {
+            clearInterval(timer);
+            el.style.opacity = 0;
+            done();
+          }
+        }, fr);
+      }
+    }
+  });
+</script>
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- vuex************* -->
+<script>
+  //src/main.js
+  import Vue from 'vue';
+  // import App from './App.vue';
+  // import App from './App2.vue';
+  import App from './App3.vue';
+
+  import {
+    store
+  } from './store/index3'; //импорт осуществляется таким образом, так как из данного файла(index.js) могут быть импортированы и другие данные(export const a, export const b); import App from './App2.vue' - когда экспорт происходит так(export default {})
+
+  new Vue({
+    el: '#app',
+    store, //передаем store в корневой элемент Vue
+    render: h => h(App)
+  });
+</script>
+
+<script>
+  //src/store/index.js
+  import Vue from 'vue';
+  import Vuex from 'vuex'; //импорт vuex
+
+  Vue.use(Vuex); //добавление к vue библиотеки Vuex
+
+  export const store = new Vuex.Store({
+    //общее хранилище, тут описываются state, getters, mutations, actions
+    state: { //данные, доступные каждому компоненту
+      cnt: 0,
+      price: 1000,
+      orderState: null
+    },
+    getters: { //задает геттеры для свойств, определенных в state, по стандартам для каждого свойства state нужно создавать свой getter
+      cnt(state) {
+        return state.cnt;
+      },
+      price(state) {
+        return state.price;
+      },
+      total(state) {
+        return state.cnt * state.price;
+      },
+      orderState(state) {
+        return state.orderState;
+      }
+    },
+    //типа methods (принимают параметром state), не умеют работать асинхронно, для этого есть actions
+    mutations: {
+      minus(state) {
+        if (state.cnt > 0) {
+          state.cnt--;
+        }
+      },
+      plus(state, payLoad) { //payLoad прокинутый параметр из Product (onPlus())
+        // state.cnt += payLoad;
+        state.cnt++;
+      },
+      orderSend(state) {
+        state.orderState = 'pending';
+      },
+      orderDone(state) {
+        state.orderState = 'done';
+      },
+      setCnt(state, count) {
+        if (count < 0) {
+          count = 0;
+        }
+        state.cnt = count;
+      }
+    },
+    //не меняют свойства state напрямую, в качестве параметра принимают store
+    actions: {
+      minus(store) { //по стандартам принято для каждой mutation создавать свой action
+        store.commit('minus');
+      },
+      sendOrder(store, data) { //data - прокинутый параметр из Content2
+        store.commit('orderSend');
+
+        setTimeout(() => {
+          store.commit('orderDone');
+          console.log(data);
+        }, 1000);
+      }
+    },
+    strict: process.env.NODE_ENV !== 'production' //режим разработки, выдает ошибку, если поменять свойство в $store.state напрямую, а не через мутацию
+  });
+</script>
+<!-- src/App.vue*********************** -->
+<template>
+  <div>
+    <app-header :cnt="cnt"></app-header>
+    <app-content @minus="onMinus" @plus="onPlus"></app-content>
+  </div>
+</template>
+
+<script>
+  /* приложение построенное на компонентах, не используя vuex(в таком случае общение между компонентами происходит только с помощью спуска данных от родителя к детям и проброса событий от детей к родителю) */
+
+  import AppHeader from "./components/Header"; //импорт компонента Header
+  import AppContent from "./components/Content"; //импорт компонента Content
+
+  export default {
+    data() {
+      return {
+        cnt: 0
+      };
+    },
+    methods: {
+      onMinus() {
+        if (this.cnt > 1) {
+          this.cnt--;
+        }
+      },
+      onPlus() {
+        this.cnt++;
+      }
+    },
+    components: {
+      //локальная регистрация компонентов
+      AppHeader,
+      AppContent
+    }
+  };
+</script>
+<!-- src/components/Header.vue*********************** -->
+<template>
+  <header>
+    <div class="container">
+      <div class="row">
+        <div class="col col-sm-12">
+          <h1>Site</h1>
+          <app-cart :cnt="cnt"></app-cart>
+        </div>
+      </div>
+    </div>
+  </header>
+</template>
+
+<script>
+  import AppCart from './Cart'; //импорт компонента Cart
+
+  export default {
+    props: ['cnt'],
+    components: {
+      //локальная регистрация компонентов
+      AppCart
+    }
+  }
+</script>
+<!-- src/components/Cart.vue*********************** -->
+<template>
+  <div>
+    {{cnt}}
+  </div>
+</template>
+
+<script>
+  export default {
+    props: ['cnt']
+  }
+</script>
+<!-- src/components/Content.vue*********************** -->
+<template>
+  <section>
+    <div class="container">
+      <div class="row">
+        <div class="col col-sm-12">
+          <app-product @minus="$emit('minus', $event)" @plus="$emit('plus', $event)"></app-product>
+        </div>
+      </div>
+    </div>
+  </section>
+</template>
+
+<script>
+  import AppProduct from "./Product"; //импорт компонента Product
+
+  export default {
+    data() {
+      return {};
+    },
+    computed: {},
+    methods: {},
+    components: {
+      //локальная регистрация компонентов
+      AppProduct
+    }
+  };
+</script>
+<style scoped>
+  .alert {
+    margin: 10px 0;
+  }
+</style>
+<!-- src/components/Product.vue*********************** -->
+<template>
+  <div>
+    <h2>Product title</h2>
+    <div class="price">
+      1000
+    </div>
+    <hr>
+    <button class="btn btn-warning" @click="onMinus()">-1</button>
+    <button class="btn btn-success" @click="onPlus()">+1</button>
+  </div>
+</template>
+
+<script>
+  export default {
+    methods: {
+      onMinus() {
+        this.$emit('minus'); //проброс события родителю
+      },
+      onPlus() {
+        this.$emit('plus'); //проброс события родителю
+      }
+    }
+  };
+</script>
+<!-- src/App2.vue*********************** -->
+<template>
+  <div>
+    <app-header></app-header>
+    <app-content></app-content>
+  </div>
+</template>
+
+<script>
+  /* приложение на компонентах, построенное на vuex 
+      npm i --save vuex
+      */
+  import AppHeader from "./components/Header2"; //импорт компонента Header
+  import AppContent from "./components/Content2"; //импорт компонента Content
+  export default {
+    components: {
+      //локальная регистрация компонентов
+      AppHeader,
+      AppContent
+    }
+  };
+</script>
+<!-- src/components/Header2.vue*********************** -->
+<template>
+  <header>
+    <div class="container">
+      <div class="row">
+        <div class="col col-sm-12">
+          <h1>Site</h1>
+          <app-cart></app-cart>
+        </div>
+      </div>
+    </div>
+  </header>
+</template>
+
+<script>
+  import AppCart from './Cart2'; //импорт компонента Cart
+  export default {
+    props: ['cnt'],
+    components: {
+      //локальная регистрация компонентов
+      AppCart
+    }
+  }
+</script>
+<!-- src/components/Cart2.vue*********************** -->
+<template>
+  <div>
+    <div>Count: {{cnt}}</div>
+    <div>Total: {{total}}</div>
+  </div>
+</template>
+
+<script>
+  /* чтобы не писать вручную  return this.$store.getters.cnt для computed свойств, придумали вспомогательные инструмента
+        1. mapState
+        2. mapGetters
+        3. mapMutations
+        4. mapActions
+        */
+
+  import {
+    mapGetters
+  } from 'vuex';
+  export default {
+    computed: mapGetters([
+      'cnt', 'total'
+    ])
+    /* computed: {
+      cnt() {
+        return this.$store.getters.cnt;
+      },
+      total() {
+        return this.$store.getters.total;
+      }
+    } */
+  }
+</script>
+<!-- src/components/Content2.vue*********************** -->
+<template>
+  <section>
+    <div class="container">
+      <div class="row">
+        <div class="col col-sm-12">
+          <app-product></app-product>
+          <hr>
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" class="form-control" v-model="name">
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="text" class="form-control" v-model="phone">
+          </div>
+          <button class="btn btn-primary" :disabled="btnDisabled" @click="onOrder">Order now</button>
+          <div class="alert alert-success" v-if="orderState == 'done'">Your order is done!</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</template>
+
+<script>
+  import AppProduct from "./Product2"; //импорт компонента Product
+  import {
+    mapGetters
+  } from "vuex";
+  export default {
+    data() { //если данные нужны только внутри компонента, нет смысла класть их в store
+      return {
+        name: '',
+        phone: ''
+      }
+    },
+    /* computed: mapGetters([ //так как при использовании mapGetters computed возвращает mapGetters, используем деструктуризацию(...) - копирование свойств одного объекта в другой(синтаксис es6)
+        'cnt'
+      ]), */
+    computed: {
+      ...mapGetters(['cnt', 'orderState']),
+      btnDisabled() {
+        return this.cnt < 1 || this.orderState !== null;
+      },
+    },
+    methods: {
+      onOrder() {
+        this.$store.dispatch('sendOrder', {
+          name: this.name,
+          phone: this.phone
+        }); //вызываем action из index.js и передаем объект с параметрами
+      }
+    },
+    components: {
+      //локальная регистрация компонентов
+      AppProduct
+    }
+  };
+</script>
+<!-- src/components/Product2.vue*********************** -->
+<template>
+  <div>
+    <h2>Product title</h2>
+    <div class="price">
+      {{price}}
+    </div>
+    <hr>
+    <button class="btn btn-warning" @click="minus">-1</button>
+    <button class="btn btn-success" @click="plus">+1</button>
+    <input type="text" :value="cnt" @input="onInput">
+    <!-- v-model="cnt" можно использовать v-model только с get() и set()-->
+  </div>
+</template>
+
+<script>
+  import {
+    mapMutations,
+    mapGetters
+  } from 'vuex'; //импорт mapMutatins, mapGetters
+
+  export default {
+    computed: {
+      ...mapGetters([
+        'price', 'cnt'
+      ]),
+      /* cnt: {
+        get() {
+          return this.$store.getters.cnt;
+        },
+        set(value) {
+          this.$store.commit('setCnt', value);
+        }
+      } */
+    },
+    methods: {
+      ...mapMutations([ //деструктуризация объекта mapMutations в объект methods
+        'minus', 'plus'
+      ]),
+      onInput(e) {
+        this.$store.commit('setCnt', e.target.value);
+      },
+      onMinus() {
+        // this.$store.state.cnt--; //нельзя менять свойства напрямую таким образом
+        this.$store.commit('minus'); //вызываем мутацию, определенную в index.js (good)
+      },
+      onPlus() {
+        // this.$store.state.cnt++;
+        this.$store.commit('plus', 5); //можно прокинуть 1 параметр, если нужно больше, то прокидываем obj			
+      }
+    }
+  };
+</script>
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- router************* -->
+<!-- src/main.js *************************-->
+<script>
+  import Vue from 'vue';
+  import App from './App.vue';
+
+  import {
+    store
+  } from './store';
+  import {
+    router
+  } from './routes.js';
+
+  //npm i --save-dev vue-resource - библиотека для ajax запросов на сервер
+
+  import VueResource from 'vue-resource';
+
+  Vue.use(VueResource);
+  Vue.http.options.root = 'http://lavrik.vuebackend/'; //адрес сервака
+
+  new Vue({
+    el: '#app',
+    store,
+    router,
+    render: h => h(App)
+  });
+</script>
+<!-- src/routes.js ******************************* -->
+<script>
+  import Vue from 'vue';
+import VueRouter from 'vue-router';
+
+Vue.use(VueRouter); //используется для создания страниц и навигации по ним, без перезагрузки страницы
+
+import ProductsList from './components/ProductsList';
+import Product from './components/Product';
+import Cart from './components/Cart';
+import Checkout from './components/Checkout';
+import E404 from './components/E404';
+
+import {store} from './store';
+
+//определяет пути и компоненты, которым передается управление по данному пути
+const routes = [
+  {
+    path: '', //редирект с главной страницы на страницу продуктов
+    redirect: {name: 'products'}
+  },
+  {
+    name: 'products',
+    path: '/products',
+    component: ProductsList,
+    beforeEnter(from, to, next) { //хук(диспатчить лучше в этом хуке, так как товары успевают загрузиться с сервака)
+      store.dispatch('products/loadItems'); //products - namespace модуля
+      next(); //обязательный метод
+    }
+  },
+  {
+    path: '/products/:id', //шаблон для страницы продукта, если после products/ идет любой знак то подгружает компонент Product
+    component: Product
+  },
+  {
+    path: '/cart',
+    component: Cart
+  },
+  {
+    name: 'checkout',
+    path: '/checkout',
+    component: Checkout
+  },
+  {
+    path: '*',
+    component: E404
+  },
+];
+
+//создаем роутер и передаем в него массив routes
+export const router = new VueRouter({
+  routes,
+  mode: 'history' //меняет ссылки, убирает # из адресной строки
+});
+</script>
+<!-- src/store/index.js ******************************* -->
+<script>
+  import Vue from 'vue';
+  import Vuex from 'vuex';
+
+Vue.use(Vuex);
+
+//импортируем модули, на которые разбит store
+import cart from './modules/cart';
+import menu from './modules/menu';
+import products from './modules/products';
+import order from './modules/order';
+
+export const store = new Vuex.Store({
+	modules: { //menu это синтаксис es6, menu: menu - es5
+		cart,
+		menu,
+		products,
+		order
+	},
+	
+	strict: process.env.NODE_ENV !== 'production'
+});
+</script>
+<!-- src/store/modules/menu.js ******************************* -->
+<script>
+  export default { //модуль экспортирует объект с такими же объектами как в store
+    namespaced: true, //чтобы не происходило пересечение имен, обращение к свойству происходит store.state['products/items'], store.state['menu/items']. перед названием свойства подставляется название модуля
+    state: {
+      items: [{
+          url: '/products',
+          text: 'Products List'
+        },
+        {
+          url: '/cart',
+          text: 'Your Cart'
+        },
+        {
+          url: '/checkout',
+          text: 'Order Now'
+        }
+      ]
+    },
+    getters: {
+      items(state) {
+        return state.items;
+      }
+    },
+    mutations: {
+
+    },
+    actions: {
+
+    }
+  };
+</script>
+<!-- src/store/modules/cart.js ******************************* -->
+<script>
+  export default { //модуль экспортирует объект с такими же объектами как в store
+    namespaced: true,
+    state: {
+      products: []
+    },
+    getters: {
+      products(state) {
+        return state.products;
+      },
+      cnt(state) {
+        return state.products.length;
+      }
+    },
+    mutations: {
+      add(state, id) {
+        if (state.products.indexOf(id) === -1) {
+          state.products.push(id);
+        }
+      },
+      remove(state, id) {
+        let pos = state.products.indexOf(id); //позиция в массиве products
+        if (pos !== -1) {
+          state.products.splice(pos, 1);
+        }
+      }
+    },
+    actions: {
+      add(store, id) {
+        store.commit('add', id);
+      },
+      remove(store, id) {
+        store.commit('remove', id);
+      }
+    }
+  };
+</script>
+<!-- src/store/modules/products.js ******************************* -->
+<script>
+  import Vue from 'vue';
+
+export default { //модуль экспортирует объект с такими же объектами как в store
+  namespaced: true,
+
+  state: {
+    items: [] /* getProducts() */
+  },
+  getters: {
+    items(state) {
+      return state.items;
+    },
+    itemsMap(state) {
+      let itemsMap = {};
+
+      for (let i = 0; i < state.items.length; i++) {
+        let product = state.items[i];
+        itemsMap[product.id_product] = product;
+      }
+
+      return itemsMap;
+    },
+    item: (state, getters) => (id) => { //по ключу item лежит функция, которая возвращает функцию, которая возвращает элемент массива items
+      return getters.itemsMap[id];
+    }
+  },
+  mutations: {
+    loadItems(state, data) {
+      state.items = data;
+    }
+  },
+  actions: { //обращение к backend нужно производить из actions
+    loadItems(store) {
+      //ajax запрос к http://lavrik.vuebackend/products.php, в складе обращаемся Vue.http, а не this.$http(this.$http - внутри компонента)
+      Vue.http.get('products.php') //возвращает промис
+      .then(response => response.json()) //возвращает объект json(then идет как синхронная операция), если возвращается промис то асинхронная
+      .then(data => {
+        store.commit('loadItems', data);
+      }).catch((err) => {
+        console.log(err);
+      }); 
+    }
+  }
+};
+
+/* function getProducts() {
+  return [
+    {
+      id_product: 1,
+      title: 'Iphone 5',
+      price: 20000
+    },
+    {
+      id_product: 2,
+      title: 'Iphone 6',
+      price: 25000
+    },
+    {
+      id_product: 3,
+      title: 'Iphone 7',
+      price: 30000
+    }
+  ]
+} */
+</script>
+<!-- src/store/modules/order.js ******************************* -->
+<script>
+  export default { //модуль экспортирует объект с такими же объектами как в store
+  namespaced: true, //чтобы не происходило пересечение имен, обращение к свойству происходит store.state['products/items'], store.state['menu/items']. перед названием свойства подставляется название модуля
+
+  state: { //данные, доступные каждому компоненту
+    firstScreen: true,
+    info: [
+      {
+        name: 'Name',
+        value: '',
+        pattern: /^[a-zA-Z ]{2,30}$/
+      },
+      {
+        name: 'Phone',
+        value: '',
+        pattern: /^[0-9]{7,14}$/
+      },
+      {
+        name: 'Email',
+        value: '',
+        pattern: /.+/
+      }
+    ],
+    controls: [], //массив флагов, пройдена валидация или нет
+    done: 0
+  },
+  getters: { //задает геттеры для свойств, определенных в state, по стандартам для каждого свойства state нужно создавать свой getter
+    info(state) {
+      return state.info;
+    },
+    firstScreen(state) {
+      return state.firstScreen;
+    },
+    controls(state) {
+      return state.controls;
+    },
+    done(state) {
+      return state.done;
+    }
+  },
+  //типа methods (принимают параметром state), не умеют работать асинхронно, для этого есть actions
+  mutations: {
+    changedata(state, data) {
+      state.info[data.index].value = data.value;
+      state.controls[data.index] = data.valid;
+
+      let done = 0;
+
+      for (let i = 0; i < state.controls.length; i++) {
+        if (state.controls[i]) {
+          done++;
+        }
+      }
+      state.done = done;
+    },
+    firstScreenOff(state){
+      state.firstScreen = false;
+    },
+    controlsFill(state) {
+      for (let i = 0; i < state.info.length; i++) {
+        state.controls.push(false);
+      }
+    }
+  },
+  //не меняют свойства state напрямую, в качестве параметра принимают store
+  actions: {
+    changedata(store, data) {
+      store.commit('changedata', data);
+    },
+    firstScreenOff(store) {
+      store.commit('firstScreenOff');      
+    },
+    controlsFill(store) {
+      store.commit('controlsFill');
+    },
+    /* minus(store) { //по стандартам принято для каждой mutation создавать свой action
+      store.commit('minus');
+    }, */
+    sendOrder(store, data) { //data - прокинутый параметр из Checkout.vue
+      // store.commit('orderSend');
+
+      setTimeout(() => {
+        // store.commit('orderDone');
+        console.log(data);
+      }, 1000);
+    }
+  }
+};
+</script>
+<!-- src/App.vue ******************************* -->
+<template>
+    <div>
+      <header>
+        <div class="container">
+          <div class="row">
+            <div class="col col-sm-9">
+              <h1>Site</h1>
+            </div>
+            <div class="col col-sm-3">
+              <div class="alert alert-default">
+                <div>In Cart: {{lengthInCart}}</div>
+              </div>
+            </div>
+          </div>
+          <hr>
+        </div>
+      </header>
+      <section>
+        <div class="container">
+          <div class="row">
+            <div class="col col-sm-3 menu">
+              <ul class="list-group">
+                <!-- создает ссылки. :to - определяет url куда происходит переход, tag - обертка -->
+                <router-link v-for="(item, index) in menuList" :key="index" :to="item.url" tag="li" class="list-group-item" active-class="active">
+                  <a>{{item.text}}</a> <!-- ссылка, так как tag li -->
+                </router-link>
+              </ul>
+            </div>
+            <div class="col col-sm-9">
+              <transition name="slide" mode="out-in">
+                <router-view></router-view> <!-- выводит содержимое компонента -->
+              </transition>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </template>
+  
+  <script>
+  import { mapGetters } from "vuex";
+  
+  export default {
+    computed: { //первый параметр - namespace(название модуля)
+      ...mapGetters('menu', {
+        menuList: 'items'
+      }),
+      ...mapGetters('cart', {
+        lengthInCart: 'cnt'
+      })
+    }
+  };
+  </script>
+  
+  <style>
+  .menu {
+    border-right: 1px solid #dddddd;
+  }
+  
+  .list-group-item {
+    transition: background 0.3s, color 0.3s;
+  }
+  
+  .list-group-item a {
+    text-decoration: none;
+  }
+  
+  .list-group-item.active a {
+    color: inherit;
+  }
+  
+  .slide-enter {
+  }
+  
+  .slide-enter-active {
+    animation: slideIn 0.5s;
+  }
+  
+  .slide-enter-to {
+  }
+  
+  .slide-leave {
+  }
+  
+  .slide-leave-active {
+    animation: slideOut 0.5s;
+  }
+  
+  .slide-leave-to {
+  }
+  
+  @keyframes slideIn {
+    from {
+      transform: rotateY(90deg);
+    }
+    to {
+      transform: rotateY(0deg);
+    }
+  }
+  
+  @keyframes slideOut {
+    from {
+      transform: rotateY(0deg);
+    }
+    to {
+      transform: rotateY(90deg);
+    }
+  }
+  </style>
+<!-- src/components/ProductsList.vue ******************************* -->
+<template>
+    <div>
+      <h1>Products</h1>
+      <div class="row">
+        <div class="col col-sm-4" v-for="(product, index) in products" :key="index">
+          <router-link tag="h3" :to="'/products/' + product.id_product">
+            <a>{{product.title}}</a>
+          </router-link>
+          <div>{{product.price}}</div>
+          <button class="btn btn-primary" v-if="inCart.indexOf(product.id_product) === -1" @click="addToCart(product.id_product)">
+            Add to cart
+          </button>
+          <button class="btn btn-warning" v-else @click="removeFromCart(product.id_product)">
+            Remove from cart
+          </button>
+        </div>
+      </div>
+    </div>
+  </template>
+  
+  <script>
+  import { mapGetters } from "vuex";
+  import { mapActions } from "vuex";
+  
+  export default {
+    created() { //хук
+      // this.$store.dispatch('products/loadItems'); 
+    },
+    computed: {
+      //первый параметр - namespace(название модуля)
+      ...mapGetters("products", {
+        products: "items"
+      }),
+      //первый параметр - namespace(название модуля)
+      ...mapGetters("cart", {
+        inCart: "products"
+      })
+    },
+    methods: {
+      //первый параметр - namespace(название модуля)
+      ...mapActions("cart", {
+        addToCart: "add",
+        removeFromCart: "remove"
+      })
+    }
+  };
+  </script>
+  
+  <style scoped>
+  .row {
+    padding-left: 15px;
+  }
+  </style>
+<!-- src/components/Product.vue ******************************* -->
+<template>
+    <div>
+      <h1>{{product.title}}</h1>
+      <router-link :to="{name: 'products'}">Back to products</router-link>
+      <hr>
+      <div class="alert alert-success">
+        {{product.price}}
+      </div>
+      <router-link :to="{name: 'checkout'}" tag="button" class="btn btn-success">Order</router-link>
+      <!-- <button class="btn btn-primary">Order</button>	 -->
+      <button class="btn btn-primary" v-if="inCart.indexOf(product.id_product) === -1" @click="addToCart(product.id_product)">Add to cart</button>	
+      <button class="btn btn-warning" v-else @click="removeFromCart(product.id_product)">
+        Remove from cart
+      </button>
+      <!-- hw: add to cart -->
+    </div>
+  </template>
+  
+  <script>
+  import { mapGetters } from "vuex";
+  import { mapActions } from "vuex";
+  
+  export default {
+    computed: {
+      id() {
+        return this.$route.params.id; //id - название параметра :id в routes.js для компонента Product
+      },
+      product() {
+        return this.$store.getters["products/item"](this.id); //возвращается функция в которую передаем id(функция определена в products.js в getters)
+      },
+      //первый параметр - namespace(название модуля)
+      ...mapGetters("cart", {
+        inCart: "products"
+      })
+    },
+    methods: {
+      //первый параметр - namespace(название модуля)
+      ...mapActions("cart", {
+        addToCart: "add",
+        removeFromCart: "remove"
+      })
+    }
+  };
+  </script>
+<!-- src/components/Cart.vue ******************************* -->
+<template>
+    <div>
+      <h1>Cart</h1>
+      <hr>
+      <div v-if="empty" class="alert alert-warning">
+        Your cart is empty!
+      </div>
+      <template v-else>
+        <table class="table table-bordered table-hover">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(product, index) in products" :key="index">
+              <td>{{product.title}}</td>
+              <td>{{product.price}}</td>
+            </tr>
+          </tbody>
+        </table>
+        <button class="btn btn-success" @click="onOrder">Order Now</button>
+      </template>
+    </div>
+  </template>
+  
+  <script>
+  import { mapGetters } from "vuex";
+  
+  export default {
+    computed: {
+      ...mapGetters("products", {
+        productsAll: "items"
+      }),
+      ...mapGetters("cart", {
+        productsInCart: "products"
+      }),
+      products() {
+        return this.productsAll.filter(elem => {
+          //filter возвращает массив с элементами, прошедшими проверку
+          return this.productsInCart.indexOf(elem.id_product) !== -1;
+        });
+      },
+      empty() {
+        return this.products.length === 0;
+      }
+    },
+    methods: {
+      onOrder() {
+        this.$router.push('/checkout'); //$router.push добавляет переход, можно передавать obj в качестве аргумента
+      }
+    }
+  };
+  </script>
+<!-- src/components/Checkout.vue ******************************* -->
+<template>
+    <div>
+      <div v-if="empty" class="alert alert-warning"> <!-- если в корзине пусто -->
+        Nothing to order, Your cart is empty!
+      </div>
+    
+      <div class="container" v-else> <!-- если есть товары в корзине -->
+        <h1 v-if="firstScreen">Order now</h1>
+        <div class="row" v-if="firstScreen">
+          <app-progress :width="width"></app-progress>
+          <app-input v-for="(item, i) in info" :key="i" :num="i" :name="item.name" :value="item.value" :pattern="item.pattern"></app-input>
+        </div>
+    
+        <div class="row" v-else>
+          <table class="col col-md-12 table table-bordered table-hover">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(product, index) in products" :key="'key'+index">
+                <td>{{product.title}}</td>
+                <td>{{product.price}}</td>
+              </tr>
+            </tbody>
+          </table>
+          <table class="col col-md-12 table table-bordered table-hover">
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(obj, i) in info" :key="i">
+                <td>{{obj.name}}</td>
+                <td>{{obj.value}}</td>
+              </tr>
+            </tbody>
+          </table>
+          </div>		
+    
+        <button v-if="firstScreen" class="btn btn-primary" :disabled="btnDisabled" @click="onOrder">
+          Send Data
+        </button>
+      </div>
+    </div>	
+    </template>
+    
+    <script>
+    import AppProgress from "./order/Progress3"; //импорт компонента Progress3
+    import AppInput from "./order/Input3"; //импорт компонента Input3
+    
+    import { mapGetters } from "vuex";
+    import { mapActions } from "vuex";
+    
+    export default {
+      computed: {
+          //геттеры из модуля order.js		
+        ...mapGetters("order", {
+          info: "info",
+          done: "done",
+          firstScreen: "firstScreen",
+          controls: "controls"
+        }),
+        ...mapGetters("products", {
+          productsAll: "items"
+        }),
+        ...mapGetters("cart", {
+          productsInCart: "products"
+        }),
+        products() {
+          return this.productsAll.filter(elem => {
+            //filter возвращает массив с элементами, прошедшими проверку
+            return this.productsInCart.indexOf(elem.id_product) !== -1;
+          });
+        },
+        empty() {
+          return this.products.length === 0;
+        },
+        btnDisabled() {
+          return this.done < this.info.length;
+        },
+        width() {
+          let w = this.done / this.info.length * 100;
+          return {
+            width: w + "%"
+          };
+        }
+      },
+      methods: {
+          //actions из модуля order.js		
+        ...mapActions("order", {
+          firstScreenOff: "firstScreenOff",
+          controlsFill: "controlsFill",
+          sendOrder: "sendOrder"
+        }),
+        onOrder() {
+          this.firstScreenOff(); //убираем первый экран(ввод информации пользователем) и показываем второй, введенные данные
+    
+          let obj = [];
+          for (let i = 0; i < this.info.length; i++) {
+            const element = this.info[i];
+            obj[i] = {name: element.name, value: element.value};
+          }
+          for (let i = 0; i < this.products.length; i++) {
+            const element = this.products[i];
+            obj.push({id: element.id_product, model: element.title, price: element.price});
+          }
+          this.sendOrder(obj); //отправляем введенную инфу и инфу о заказанных товарах
+        }
+      },
+      beforeMount() {
+        //хук
+        this.controlsFill(); //заполняем массив controls, action из order.js
+      },
+      components: {
+        //локальная регистрация компонентов
+        AppProgress,
+        AppInput
+      }
+    };
+    </script>
+<!-- src/components/E404.vue ******************************* -->
+<template>
+  <div>
+    <h1>Page not found</h1>
+    <hr>
+    <router-link :to="{name: 'products'}">Start from main page</router-link>
+  </div>
+</template>
+
+<script>
+  export default {
+
+  }
+</script>
+<!-- src/components/order/Input3.vue ******************************* -->
+<template>
+    <div class="col col-sm-12">
+      <div class="form-group">
+        <label>{{name}}</label> <i class="fa" v-if="activated" :class="validClass"></i>
+        <input type="text" class="form-control" :value="value" @input="onInput">
+      </div>
+    </div>
+    
+  </template>
+  
+  <script>
+  import { mapActions } from "vuex";
+  
+  export default {
+    props: ["name", "value", "pattern", "num"],
+    data() {
+      return {
+        activated: this.value != ""
+      };
+    },
+    computed: {
+      //проверяем введеное значение на соответствие паттерну(в завис. от этого подставляем класс)
+      validClass() {
+        return this.pattern.test(this.value)
+          ? "fa-check-circle text-success"
+          : "fa-exclamation-circle text-danger";
+      }
+    },
+    methods: {
+      ...mapActions("order", { //actions из модуля order.js
+        changedata: "changedata"
+      }),
+      onInput(e) {
+        //активируем флаг, что данные были введены в поле
+        this.activated = true;
+  
+        this.changedata({
+          value: e.target.value,
+          valid: this.pattern.test(e.target.value),
+          index: this.num
+        });
+        /* this.$store.commit("changedata", {
+          value: e.target.value,
+          valid: this.pattern.test(e.target.value),
+          index: this.num
+        }); */
+      }
+    },
+    components: {
+      //локальная регистрация компонентов
+    }
+  };
+  </script>
+<!-- src/components/order/Progress3.vue ******************************* -->
+<template>
+    <div class="col col-sm-12">
+      <div class="progress">
+        <div class="progress-bar" :style="width"></div>
+      </div>
+    </div>
+    
+  </template>
+  
+  <script>
+  export default {
+    props: ['width'],
+    components: {
+      //локальная регистрация компонентов
+    }
+  };
+  </script> 
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- transition_group, slot, promise************* -->
+<form>
+  <div class="form-group">
+    <label>Guests</label>
+    <input type="button" class="btn btn-primary" value="+" @click="addGuest">
+  </div>
+  <transition-group name="fade" tag="div">
+    <!-- transition на несколько элементов, :key в цикле обязателен -->
+    <div class="form-group" v-for="(name, key, index) in guests" :key="key">
+      <label @dblclick="deleteGuest(key)">Guest {{ index + 1 }}</label>
+      <input type="text" class="form-control" @input="onInput(key, $event)">
+    </div>
+  </transition-group>
+  <hr>
+  <button class="btn btn-success">Send Data</button>
+</form>
+
+<app-notice>
+  <h2 slot="header">Attention! Message!</h2>
+  <!-- h2 пойдет в slot name='header', остальные во второй slot -->
+  <p>{{ text }}</p>
+  <button class="btn btn-success">1</button>
+</app-notice>
+
+<script>
+  Vue.component('app-notice', {
+    //slot хорошо подходит для создания модальных окон, когда нужно передать данные в компонент
+    template: `
+          <div class="alert alert-warning">
+              <slot name="header"></slot>
+              <hr>
+              <slot>Default text</slot>
+          </div>
+      `
+  });
+  new Vue({
+    el: '.sample',
+    data: {
+      text: 'some'
+    }
+  });
+</script>
+
+<script>
+  userReg().then((res) => {
+    console.log(res);
+    //в случае успеха возвращает промис из функции userAuth(), его можно использовать для следующей функции then()        
+    return userAuth();
+  }).then((res) => {
+    console.log(res);
+    return userGetData();
+  }).then((res) => {
+    console.log(res);
+  }).catch((err) => { //если какой-то блок возврыщыет ошибку, то попадаем в блок catch(), можно конечно вручную отлавливать ошибки в каждом блоке
+    console.log(err);
+  });
+
+  function userReg(success, error) {
+    return new Promise(function (resolve, reject) { //возвращает новый промис
+      setTimeout(function () {
+        if (Math.random() > 0.2) {
+          resolve("+ registration");
+        } else {
+          reject("- registration");
+        }
+      }, 500);
+    });
+  }
+
+  function userAuth(success, error) {
+    return new Promise(function (resolve, reject) {
+      setTimeout(function () {
+        if (Math.random() > 0.2) {
+          resolve("+ auth");
+        } else {
+          reject("- auth");
+        }
+      }, 500);
+    });
+  }
+
+  function userGetData(success, error) {
+    return new Promise(function (resolve, reject) {
+      setTimeout(function () {
+        if (Math.random() > 0.2) {
+          resolve("+ data");
+        } else {
+          reject("- data");
+        }
+      }, 500);
+    });
+  }
+
+  /* function userReg(success, error) {
+    setTimeout(function () {
+      if (Math.random() > 0.2) {
+        success("+ registration");
+      } else {
+        error("- registration");
+      }
+    }, 500);
+  } */
+</script>
+
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- ************************************************************************************************* -->
+<!-- homeworks************* -->
+<!-- hw1 **************************************-->
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1</title>
+  <link rel="stylesheet" href="css//bootstrap.min.css">
+  <link rel="stylesheet" href="css/font-awesome.min.css">
+  <link href="css/styles.css" rel="stylesheet">
+  <script src="js/vue.js"></script>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div class="sample">
+      <form v-if="firstScreen" @submit.prevent="firstScreen = !firstScreen">
+        <div class="progress">
+          <div class="progress-bar" :style="width"></div>
+        </div>
+        <div>
+          <div class="form-group" v-for="(obj, i) in info">
+            <label>{{obj.name}}</label>
+            <i class="fa" :class="obj.className" v-show="iconVisible(obj)" :style="patternValidate(obj.value, obj.pattern, i)"></i>
+            <input type="text" class="form-control" v-model="obj.value">
+          </div>
+        </div>
+        <button class="btn btn-primary" :disabled="btnDisabled">
+          Send Data
+        </button>
+      </form>
+      <div v-else>
+        <table class="table table-bordered">
+          <tr v-for="(obj, i) in info">
+            <td>{{obj.name}}</td>
+            <td>{{obj.value}}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script>
+    new Vue({
+      el: '.sample',
+      data: {
+        iconShowed: false,
+        colors: ['red', 'green'],
+        className: '',
+        progressWidth: 0,
+        firstScreen: true,
+        info: [{
+            name: 'Name',
+            value: '',
+            pattern: /^[a-zA-Z ]{2,30}$/,
+            checked: false,
+            className: 'fa-warning'
+          },
+          {
+            name: 'Phone',
+            value: '',
+            pattern: /^[0-9]{7,14}$/,
+            checked: false,
+            className: 'fa-warning'
+          },
+          {
+            name: 'Email',
+            value: '',
+            pattern: /.+/,
+            checked: false,
+            className: 'fa-warning'
+          },
+          {
+            name: 'Some Field 1',
+            value: '',
+            pattern: /.+/,
+            checked: false,
+            className: 'fa-warning'
+          },
+          {
+            name: 'Some Field 2',
+            value: '',
+            pattern: /.+/,
+            checked: false,
+            className: 'fa-warning'
+          }
+        ]
+      },
+      methods: {
+        iconVisible(obj) {
+          return obj.value.length > 0;
+        },
+        patternValidate(string, pattern, id) {
+          if (string.search(pattern) !== -1) {
+            if (!this.info[id].checked) {
+              this.progressWidth++;
+              this.info[id].className = 'fa-check';
+              this.info[id].checked = true;
+            }
+            return {
+              color: this.colors[1]
+            }
+          } else {
+            if (this.info[id].checked) {
+              this.progressWidth--;
+              this.info[id].className = 'fa-warning';
+              this.info[id].checked = false;
+            }
+            return {
+              color: this.colors[0]
+            }
+          }
+        }
+      },
+      computed: {
+        width() {
+          let w = this.progressWidth / this.info.length * 100;
+          return {
+            width: w + '%'
+          }
+        },
+        btnDisabled() {
+          return this.progressWidth !== this.info.length;
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>
+<!-- hw2 **************************************************************************-->
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1</title>
+  <link rel="stylesheet" href="css//bootstrap.min.css">
+  <link rel="stylesheet" href="css/font-awesome.min.css">
+  <link href="css/styles.css" rel="stylesheet">
+  <script src="js/vue.js"></script>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div class="sample">
+      <form v-if="firstScreen" @submit.prevent="firstScreen = !firstScreen">
+        <div class="progress">
+          <div class="progress-bar" :style="width"></div>
+        </div>
+        <div>
+          <div class="form-group" v-for="(obj, i) in info">
+            <label>{{obj.name}}</label>
+            <i class="fa" v-if="controls[i].activated" :class="controls[i].error ? 
+						'fa-exclamation-circle text-danger' : 'fa-check-circle text-success'"></i>
+            <input type="text" class="form-control" :value="obj.value" @input="onInput(i, $event.target.value)">
+          </div>
+        </div>
+        <button class="btn btn-primary" :disabled="btnDisabled">
+          Send Data
+        </button>
+      </form>
+      <div v-else>
+        <table class="table table-bordered">
+          <tr v-for="(obj, i) in info">
+            <td>{{obj.name}}</td>
+            <td>{{obj.value}}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script>
+    new Vue({
+      el: '.sample',
+      data: {
+        firstScreen: true,
+        info: [{
+            name: 'Name',
+            value: '',
+            pattern: /^[a-zA-Z ]{2,30}$/
+          },
+          {
+            name: 'Phone',
+            value: '',
+            pattern: /^[0-9]{7,14}$/
+          },
+          {
+            name: 'Email',
+            value: '',
+            pattern: /.+/
+          },
+          {
+            name: 'Some Field 1',
+            value: '',
+            pattern: /.+/
+          },
+          {
+            name: 'Some Field 2',
+            value: '',
+            pattern: /.+/
+          }
+        ],
+        controls: [] //массив флагов, пройдена валидация или нет
+      },
+      beforeMount() { //хук 
+        for (let i = 0; i < this.info.length; i++) {
+          this.controls.push({
+            error: true,
+            activated: false
+          });
+        }
+      },
+      methods: {
+        onInput(index, value) {
+          let data = this.info[index]; //получаем объект из массива info
+          let control = this.controls[index]; //получаем объект из массива controls
+          data.value = value;
+          control.error = !data.pattern.test(value); //ошибка в зависимости от валидации значения по паттерну
+          control.activated = true;
+        }
+      },
+      computed: {
+        done() {
+          let done = 0;
+          for (let i = 0; i < this.controls.length; i++) {
+            if (!this.controls[i].error) {
+              done++;
+            }
+          }
+          return done;
+        },
+        width() {
+          let w = this.done / this.info.length * 100;
+
+          return {
+            width: w + '%'
+          }
+        },
+        btnDisabled() {
+          return this.done < this.info.length;
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>
+<!-- hw3 **************************************************************************-->
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1</title>
+  <link rel="stylesheet" href="css//bootstrap.min.css">
+  <link rel="stylesheet" href="css/font-awesome.min.css">
+  <link href="css/styles.css" rel="stylesheet">
+  <script src="js/vue.js"></script>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div class="sample">
+      <form v-if="firstScreen" @submit.prevent="firstScreen = !firstScreen">
+        <div class="progress">
+          <div class="progress-bar" :style="width"></div>
+        </div>
+        <div>
+          <!-- компонент appInput(в html называем через дефис), :name, :value - атрибуты определенные в массиве props -->
+          <app-input v-for="(obj, i) in info" :name="obj.name" :value="obj.value" :pattern="obj.pattern" :key="i" @changedata="onChangeData(i, $event)">
+          </app-input>
+        </div>
+        <button class="btn btn-primary" :disabled="btnDisabled">
+          Send Data
+        </button>
+      </form>
+      <div v-else>
+        <table class="table table-bordered">
+          <tr v-for="(obj, i) in info">
+            <td>{{obj.name}}</td>
+            <td>{{obj.value}}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script>
+    Vue.component('appInput', {
+      props: ['name', 'value', 'pattern'], //атрибуты
+      template: `
+					<div class="form-group">
+						<label>{{name}}</label> <i class="fa" v-if="activated" :class="validClass"></i>
+						<input type="text" class="form-control" :value="value" @input="onInput">
+					</div>
+			`,
+      data() {
+        return {
+          activated: this.value != ''
+        }
+      },
+      computed: {
+        //проверяем введеное значение на соответствие паттерну(в завис. от этого подставляем класс)
+        validClass() {
+          return this.pattern.test(this.value) ? 'fa-check-circle text-success' :
+            'fa-exclamation-circle text-danger';
+        }
+      },
+      methods: {
+        onInput(e) {
+          //активируем флаг, что данные были введены в поле
+          this.activated = true;
+
+          //пробрасываем событие родителю и объект с параметрами($event)
+          this.$emit('changedata', {
+            value: e.target.value,
+            valid: this.pattern.test(e.target.value)
+          });
+        }
+      }
+    });
+    new Vue({
+      el: '.sample',
+      data: {
+        firstScreen: true,
+        info: [{
+            name: 'Name',
+            value: '',
+            pattern: /^[a-zA-Z ]{2,30}$/
+          },
+          {
+            name: 'Phone',
+            value: '',
+            pattern: /^[0-9]{7,14}$/
+          },
+          {
+            name: 'Email',
+            value: '',
+            pattern: /.+/
+          },
+          {
+            name: 'Some Field 1',
+            value: '',
+            pattern: /.+/
+          },
+          {
+            name: 'Some Field 2',
+            value: '',
+            pattern: /.+/
+          }
+        ],
+        controls: [], //массив флагов, пройдена валидация или нет
+        done: 0
+      },
+      beforeMount() { //хук 
+        for (let i = 0; i < this.info.length; i++) {
+          this.controls.push(false);
+        }
+      },
+      methods: {
+        onChangeData(index, data) {
+          this.info[index].value = data.value;
+          this.controls[index] = data.valid;
+          let done = 0;
+          for (let i = 0; i < this.controls.length; i++) {
+            if (this.controls[i]) {
+              done++;
+            }
+          }
+          this.done = done;
+        }
+      },
+      computed: {
+        width() {
+          let w = this.done / this.info.length * 100;
+
+          return {
+            width: w + '%'
+          }
+        },
+        btnDisabled() {
+          return this.done < this.info.length;
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>
+<!-- hw3.1 **************************************************************************-->
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1</title>
+  <link rel="stylesheet" href="css//bootstrap.min.css">
+  <link rel="stylesheet" href="css/font-awesome.min.css">
+  <link href="css/styles.css" rel="stylesheet">
+  <script src="js/vue.js"></script>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div class="sample">
+      <div v-timer:1000.5="onTimer">1</div>
+      <div v-timer:1000.5.run="onTimer">2</div>
+      <div v-timer:1000.5="onTimer">3</div>
+    </div>
+  </div>
+  <script>
+    Vue.directive('timer', {
+      bind(el, options) { //все модификаторы и аргументы и... находятся в объекте options
+        let timer;
+        let interval = options.arg; //аргумент - 1000
+        let max = Infinity;
+        let done = 0;
+        console.log(options);
+        for (let name in options.modifiers) { //модификаторы - 5.run.anymore
+          if (!isNaN(+name)) {
+            max = parseInt(name); //получаем целое число 5(количество повторений)
+          }
+        }
+        let callback = () => {
+          done++;
+          options.value(el); //value находится в объекте options
+          if (done < max) {
+            timer = setTimeout(() => {
+              callback();
+            }, interval);
+          }
+        };
+        if (done < max) {
+          if (options.modifiers.run) { //если флаг run, то выполняем функцию сразу
+            callback();
+          } else {
+            timer = setTimeout(() => { //если нет, то по интервалу
+              callback();
+            }, interval);
+          }
+        }
+      }
+    });
+    new Vue({
+      el: '.sample',
+      data: {
+
+      },
+      methods: {
+        onTimer(el) { //передаем элемент, забинденный в функции bind()
+          let fontSize = getComputedStyle(el)['fontSize'];
+          el.style.fontSize = parseInt(fontSize) + 10 + 'px'; //увеличиваем размер шрифта элемента
+        }
+      },
+      computed: {
+
+      }
+    });
+  </script>
+</body>
+
+</html>
+<!-- hw4 **************************************************************************-->
+<script>
+  //src/main.js
+  import Vue from 'vue'
+  // import App from './App.vue'
+  import App from './App2.vue'
+
+  new Vue({
+    el: '#app',
+    render: h => h(App)
+  });
+</script>
+<!-- src/components/Input.vue -->
+<template>
+  <div class="form-group">
+    <label>{{name}}</label>
+    <i class="fa" v-if="activated" :class="validClass"></i>
+    <input type="text" class="form-control" :value="value" @input="onInput">
+  </div>
+</template>
+
+<script>
+  export default {
+    props: ['name', 'value', 'pattern'], //атрибуты
+    data() {
+      return {
+        activated: this.value != ''
+      }
+    },
+    mounted() {
+      this.$emit('changestatus', this.isValid); //прокидываем событие родителю в хуке, чтобы прогресбар пересчитался(для значений поля value, установленного по-умолчанию )
+    },
+    computed: {
+      isValid() {
+        return this.pattern.test(this.value);
+      },
+      //проверяем введеное значение на соответствие паттерну(в завис. от этого подставляем класс)
+      validClass() {
+        return this.isValid ? 'fa-check-circle text-success' : 'fa-exclamation-circle text-danger';
+      },
+    },
+    methods: {
+      onInput(e) {
+        //активируем флаг, что данные были введены в поле
+        this.activated = true;
+
+        //пробрасываем событие родителю и объект с параметрами($event)
+        /* this.$emit('changedata', { 
+          value: e.target.value,
+          valid: this.pattern.test(e.target.value)
+        }); */
+        this.$emit('update:value', e.target.value); //если применяем модификатор .sync в родителе - пробрасываем событие update:value, так как .sync подставлен к value в родителе
+      }
+    },
+    watch: {
+      isValid() { //вешаем watcher на свойство isValid, когда значение его меняется, то пробрасываем событие changedata родителю
+        this.$emit('changestatus', this.isValid);
+      }
+    }
+  }
+</script>
+<!-- src/components/Radio.vue -->
+<template>
+  <div>
+    <h3>{{info[current].title}}</h3>
+    <hr>
+    <div class="form-check" v-for="(item, i) in info[current].answers" :key="i">
+      <label class="form-check-label">
+        <input :type="info[current].type" class="form-check-input" :value="item" v-model="info[current].selected"> {{ info[current].answers[i] }}
+      </label>
+    </div>
+  </div>
+  <!-- @input="onInput(i, $event.target.value)" -->
+</template>
+
+<script>
+  export default {
+    props: ["current", "check"], //атрибуты
+    data() {
+      return {
+        // checked: false,
+        info: [{
+            type: "radio",
+            title: "Какой тег задаёт ссылку?",
+            answers: ["a", "div", "span", "img"],
+            selected: ''
+          },
+          {
+            type: "checkbox",
+            title: "Какие из  этих тегов строчные?",
+            answers: ["a", "div", "span", "img"],
+            selected: []
+          }
+        ]
+      };
+    },
+    mounted() {
+
+    },
+    computed: {
+      checked() {
+        // return this.info[this.current].btnDisabled;
+      },
+      selected() {
+        return this.info[this.current].selected;
+      },
+      currentQuestion() {
+        return this.current;
+      }
+    },
+    methods: {
+      onInput(index, value) {
+        /* console.log(value);
+        
+        this.info[this.current].checked = value;
+        console.log(this.info[this.current].checked);
+        
+        this.info[this.current].btnDisabled = false; */
+      }
+    },
+    watch: {
+      checked() {
+        //вешаем watcher на свойство checked, когда значение его меняется, то пробрасываем событие changedata родителю
+        // this.$emit("changebtnstatus", this.info[this.current].btnDisabled);
+      },
+      selected() {
+        if (this.selected.length > 0) {
+
+          console.log(this.selected);
+          this.$emit("changebtnstatus", false);
+        } else {
+          console.log(this.selected);
+          this.$emit("changebtnstatus", true);
+        }
+      },
+      currentQuestion() {
+        this.$emit("theend", this.info);
+      }
+    }
+  };
+</script>
+<!-- src/components/App2.vue -->
+<template>
+  <div class="wrapper">
+    <div class="sample">
+      <form @submit.prevent="current" v-if="currentQuestion <= 1">
+        <div>
+          <app-radio v-if="currentQuestion == 0" @changebtnstatus="onBtnDisabled($event)" :current="currentQuestion">
+          </app-radio>
+          <app-radio v-else-if="currentQuestion == 1" @changebtnstatus="onBtnDisabled($event)" @theend="theEnd($event)" :current="currentQuestion">
+          </app-radio>
+          <!-- компонент appInput(в html называем через дефис), :name, :value - атрибуты опеределенные в массиве props; модификатор .sync позволяет избавиться от события @changedata="onChangeData(i, $event)" -->
+          <!-- <app-input v-for="(obj, i) in info" :name="obj.name" :value.sync="obj.value" :pattern="obj.pattern" :key="i" @changestatus="onChangeData(i, $event)">
+  
+            </app-input> -->
+          <!-- *************************** -->
+
+        </div>
+        <hr>
+        <button class="btn btn-primary" :disabled="btnDisabled">
+          Далее
+        </button>
+      </form>
+      <div v-else>
+        <table class="table table-bordered">
+          yo
+          <tbody>
+            <tr v-for="(obj, i) in result" :key="i">
+              <td>{{obj.title}}</td>
+              <td>{{obj.selected}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  /* npm i vue-cli -g (устанавливаем vue глобально) 
+      vue init webpack-simple (скачиваем сборку)
+      npm i (устанавливаем пакеты)
+      npm run dev (запускает сервер с приложением)
+      npm run build (собирает проект)
+    */
+  import AppRadio from "./components/Radio"; //импортируем компонент Radio.vue
+
+  export default { //все что было в new Vue({...} или Vue.component({}), кроме el: '.simple')
+    data() { //data метод возвращающий объект
+      return {
+        result: [],
+        btnDisabled: true,
+        // firstScreen: true,
+        currentQuestion: 0
+      }
+    },
+    beforeMount() {
+
+    },
+    methods: {
+      onBtnDisabled(e) {
+        this.btnDisabled = e;
+        console.log(e);
+      },
+      current() {
+        this.btnDisabled = true;
+        console.log(this.btnDisabled);
+        return this.currentQuestion++;
+      },
+      theEnd(e) {
+        this.result = e;
+        console.log(e);
+      }
+    },
+    computed: {
+
+    },
+    components: {
+      //локальная регистрация компонентов
+      AppRadio
+    }
+  };
+</script>
+<style scoped>
+  /* scoped - стили действуют только на элементы определенные в данном компоненте */
+
+  .wrapper {
+    max-width: 600px;
+    margin: 20px auto;
+  }
+</style>
+<!-- hw5 **************************************************************************-->
+<script>
+  //src/main.js
+  import Vue from 'vue';
+  // import App from './App.vue';
+  // import App from './App2.vue';
+  import App from './App3.vue';
+
+  import {
+    store
+  } from './store/index3'; //импорт осуществляется таким образом, так как из данного файла(index.js) могут быть импортированы и другие данные(export const a, export const b); import App from './App2.vue' - когда экспорт происходит так(export default {})
+
+  new Vue({
+    el: '#app',
+    store, //передаем store в корневой элемент Vue
+    render: h => h(App)
+  });
+</script>
+<!-- src/store/index3.js -->
+<script>
+  import Vue from 'vue';
+  import Vuex from 'vuex'; //импорт vuex
+
+  Vue.use(Vuex); //добавление к vue библиотеки Vuex
+
+  export const store = new Vuex.Store({
+    //общее хранилище, тут описываются state, getters, mutations, actions
+    state: { //данные, доступные каждому компоненту
+      firstScreen: true,
+      info: [{
+          name: 'Name',
+          value: '',
+          pattern: /^[a-zA-Z ]{2,30}$/
+        },
+        {
+          name: 'Phone',
+          value: '',
+          pattern: /^[0-9]{7,14}$/
+        },
+        {
+          name: 'Email',
+          value: '',
+          pattern: /.+/
+        },
+        {
+          name: 'Some Field 1',
+          value: '',
+          pattern: /.+/
+        },
+        {
+          name: 'Some Field 2',
+          value: '',
+          pattern: /.+/
+        }
+      ],
+      controls: [], //массив флагов, пройдена валидация или нет
+      done: 0
+    },
+    getters: { //задает геттеры для свойств, определенных в state, по стандартам для каждого свойства state нужно создавать свой getter
+      info(state) {
+        return state.info;
+      },
+      firstScreen(state) {
+        return state.firstScreen;
+      },
+      controls(state) {
+        return state.controls;
+      },
+      done(state) {
+        return state.done;
+      }
+    },
+    //типа methods (принимают параметром state), не умеют работать асинхронно, для этого есть actions
+    mutations: {
+      changedata(state, data) {
+        state.info[data.index].value = data.value;
+        state.controls[data.index] = data.valid;
+
+        let done = 0;
+
+        for (let i = 0; i < state.controls.length; i++) {
+          if (state.controls[i]) {
+            done++;
+          }
+        }
+        state.done = done;
+      },
+      firstScreenOff(state) {
+        state.firstScreen = false;
+      }
+    },
+    //не меняют свойства state напрямую, в качестве параметра принимают store
+    actions: {
+      minus(store) { //по стандартам принято для каждой mutation создавать свой action
+        store.commit('minus');
+      },
+      sendOrder(store, data) { //data - прокинутый параметр из Content2
+        store.commit('orderSend');
+
+        setTimeout(() => {
+          store.commit('orderDone');
+          console.log(data);
+        }, 1000);
+      }
+    },
+    strict: process.env.NODE_ENV !== 'production' //режим разработки, выдает ошибку, если поменять свойство в $store.state напрямую, а не через мутацию
+  });
+</script>
+<!-- src/App3.vue -->
+<template>
+
+  <div class="container">
+    <div class="row" v-if="firstScreen">
+      <app-header :name="info[0].value" :result="!firstScreen"></app-header>
+      <app-progress :width="width"></app-progress>
+      <app-input v-for="(item, i) in info" :key="i" :num="i" :name="item.name" :value="item.value" :pattern="item.pattern"></app-input>
+    </div>
+
+    <div class="row" v-else>
+      <app-header :name="info[0].value" :result="!firstScreen"></app-header>
+      <table class="table table-bordered">
+        <tbody>
+          <tr v-for="(obj, i) in info" :key="i">
+            <td>{{obj.name}}</td>
+            <td>{{obj.value}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <button v-if="firstScreen" class="btn btn-primary" :disabled="btnDisabled" @click="onClick">
+      Send Data
+    </button>
+  </div>
+
+</template>
+
+<script>
+  /* приложение на компонентах, построенное на vuex 
+    npm i --save-dev vuex
+    */
+
+  import AppHeader from "./components/Header3"; //импорт компонента Header
+  import AppProgress from "./components/Progress3"; //импорт компонента Progress3
+  import AppInput from "./components/Input3"; //импорт компонента Input3
+
+  import {
+    mapGetters
+  } from "vuex";
+
+  export default {
+    computed: {
+      ...mapGetters(["info", "controls", "done", "firstScreen"]),
+      btnDisabled() {
+        return this.done < this.info.length;
+      },
+      width() {
+        let w = this.done / this.info.length * 100;
+
+        return {
+          width: w + "%"
+        };
+      }
+    },
+    methods: {
+      onClick() {
+        this.$store.commit('firstScreenOff');
+      }
+    },
+    beforeMount() {
+      //хук
+      for (let i = 0; i < this.info.length; i++) {
+        this.controls.push(false);
+      }
+    },
+    components: {
+      //локальная регистрация компонентов
+      AppHeader,
+      AppProgress,
+      AppInput
+    }
+  };
+</script>
+<!-- src/components/Header3.vue -->
+<template>
+  <header class="col col-sm-12">
+    <h1>Site</h1>
+    <p v-if="result">Hello, {{name}}</p>
+    <hr>
+  </header>
+</template>
+
+<script>
+  export default {
+    props: ['name', 'result'],
+    components: {
+      //локальная регистрация компонентов
+
+    }
+  }
+</script>
+<!-- src/components/Input3.vue -->
+<template>
+  <div class="col col-sm-12">
+    <div class="form-group">
+      <label>{{name}}</label>
+      <i class="fa" v-if="activated" :class="validClass"></i>
+      <input type="text" class="form-control" :value="value" @input="onInput">
+    </div>
+  </div>
+
+</template>
+
+<script>
+  export default {
+    props: ["name", "value", "pattern", "num"],
+    data() {
+      return {
+        activated: this.value != ""
+      };
+    },
+    computed: {
+      //проверяем введеное значение на соответствие паттерну(в завис. от этого подставляем класс)
+      validClass() {
+        return this.pattern.test(this.value) ?
+          "fa-check-circle text-success" :
+          "fa-exclamation-circle text-danger";
+      }
+    },
+    methods: {
+      onInput(e) {
+        //активируем флаг, что данные были введены в поле
+        this.activated = true;
+        this.$store.commit("changedata", {
+          value: e.target.value,
+          valid: this.pattern.test(e.target.value),
+          index: this.num
+        });
+      }
+    },
+    components: {
+      //локальная регистрация компонентов
+    }
+  };
+</script>
+<!-- src/components/Progress3.vue -->
+<template>
+  <div class="col col-sm-12">
+    <div class="progress">
+      <div class="progress-bar" :style="width"></div>
+    </div>
+  </div>
+
+</template>
+
+<script>
+  export default {
+    props: ['width'],
+    components: {
+      //локальная регистрация компонентов
+    }
+  };
+</script>
