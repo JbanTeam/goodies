@@ -164,6 +164,19 @@ console.log(sensitive`Мой пароль от вконтакта: ${`chugeboBec
 /* ********************************************************************************************** */
 //npm i --save-dev --save-exact gulp-better-rollup - плагин для галпа, чтобы собирать модули
 //npm i --save-dev --save-exact gulp-sourcemaps - плагин для галпа, создает карту файла, чтобы браузер правильно понимал на какой строке и в каком файле произошла ошибка или вывод(console.log) и пр.
+// myModule.js
+const message = "Hello";
+const name = "JT";
+const location = "RF";
+const add = (a, b) => {
+  return a + b;
+}
+
+export { message, name, add, location as default }; //location - export default
+// index.js
+import myLocation, {message, name} from './myModule'; //myLocation - export default
+import myLocation from './myModule'; //export default
+
 // Файл mother.js
 export const name = `Мама`; //экспортирует переменные определенные в mother.js
 export const age = 12;
