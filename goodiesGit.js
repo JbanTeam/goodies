@@ -19,6 +19,7 @@
 // git config alias.sayHi '!git ...; git ...' - несколько команд
 
 // git config --global core.editor "'c:\program files\sublime text 3\subl.exe' -w" - чтобы команды гит вызывали sublime
+// git config --global core.editor "subl -n -w" - для линукса
 
 // разобраться с .gitattributes, .gitignore***********************************************************
 // git config --global core.excludesFile ~/.gitignore - создать глобальный .gitignore
@@ -49,7 +50,8 @@
 // git branch - показывает существующие ветки (master, ...)
 // git branch -v - показывает существующие ветки и ссылки на коммит(master, ...)
 // git branch newmaster - создаем новую ветку
-// git branch -D newmaster - удаляем ветку
+// git branch -d newmaster - удаляем ветку, если ветки смерджены(находятся на одном коммите(объединена в текущей), например master/newmaster)
+// git branch -D newmaster - удаляем ветку, коммиты становятся недостижимыми и со временем удалятся, но в данный момент еще можно все вернуть назад(git branch newmaster (коммит на который newmaster указывал до удаления))
 // git checkout newmaster - переключаемся на новую ветку
 // git checkout -b fix - создать новую ветку fix и сразу переключиться на нее
 // git checkout -f master - принудительно переключиться на ветку мастер, если в текущей ветке есть не закоммиченные изменения, не сохранятся
@@ -68,6 +70,8 @@
 // git reset index.html - сбросить индексацию 
 // Если не понравились внесенные изменения
 // git checkout HEAD index.html - возвращаем версию файла из последнего коммита
+// git checkout index.html - возвращаем версию файла из индекса
+// git checkout -- master - переключаемся на путь мастер, а не на ветку
 
 // git log - выводит все коммиты
 // git log --oneline - выводит все коммиты в компактном виде
@@ -75,6 +79,7 @@
 // git show HEAD~ - показать предыдущий коммит от текущего (~~ на 2 коммита назад и тп.; @ - сокращ. HEAD)
 // git show @~ = git show HEAD~
 // git show fix:index.htnl - посмотреть версию файла из ветки fix
+// git show @~:index.htnl - посмотреть версию файла из предыдущего коммита
 // git show :index.htnl - посмотреть версию файла текущую проиндексированную
 // git show :/sayBye - показывает коммит с указанным словом в описании (sayBye)
 
@@ -123,7 +128,7 @@
 // git reset - сбросить индексацию
 // git reset index.html - сбросить индексацию конкретного файла
 // git commit --amend - заменяет коммит на обновленный(2 в одном, git reset --soft @~ и git commit -C ORIG_HEAD)
-// git commit --amend --reset-authot --no-edit - не копирует информацию об авторе и не вызывает редактор
+// git commit --amend --reset-author --no-edit - не копирует информацию об авторе и не вызывает редактор
 
 // git clean -dxf - удаляет неотслеживаемые файлы (-d - еще и директории; -x - еще и файлы и директории из gitignore; -f - без этого не работает)
 
